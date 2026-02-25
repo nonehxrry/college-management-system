@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: cms-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+```
+
+---
+
+**OR** the simpler fix — create `frontend/vite.config.js` with a base, and add this file:
+
+**`frontend/public/_redirects`** — make sure it contains exactly:
+```
+/*    /index.html   200

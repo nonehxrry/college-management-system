@@ -1,0 +1,263 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   App.css — component-level overrides and role-specific theming
+   Imported in App.jsx so these apply globally after index.css
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Recharts customisation ─────────────────────────────────────────────── */
+.recharts-cartesian-axis-tick-value {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 11px;
+  fill: #9ca3af;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  border-radius: 12px !important;
+  border: 1px solid #f0f0f0 !important;
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.12) !important;
+  font-family: "DM Sans", system-ui, sans-serif !important;
+  font-size: 13px !important;
+}
+
+.recharts-tooltip-label {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.recharts-tooltip-item {
+  color: #6b7280 !important;
+}
+
+.recharts-legend-item-text {
+  font-size: 12px !important;
+  color: #6b7280 !important;
+}
+
+.recharts-surface {
+  overflow: visible;
+}
+
+/* ─── Role-specific sidebar themes ───────────────────────────────────────── */
+
+/* Student — deep blue */
+.sidebar-student {
+  background: linear-gradient(160deg, #0f172a 0%, #1a2f5a 50%, #1e3a5f 100%);
+}
+.sidebar-student .nav-item-active {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.sidebar-student .nav-item-inactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Professor — deep emerald */
+.sidebar-professor {
+  background: linear-gradient(160deg, #052e16 0%, #064e3b 50%, #065f46 100%);
+}
+.sidebar-professor .nav-item-active {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.sidebar-professor .nav-item-inactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Admin — deep violet */
+.sidebar-admin {
+  background: linear-gradient(160deg, #1a0533 0%, #231242 50%, #2d1257 100%);
+}
+.sidebar-admin .nav-item-active {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.sidebar-admin .nav-item-inactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Animated gradient for hero/login panels ────────────────────────────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* ─── Attendance radial gauge ────────────────────────────────────────────── */
+.radial-gauge {
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.radial-gauge-track {
+  fill: none;
+  stroke: #f3f4f6;
+  stroke-width: 10;
+}
+.radial-gauge-fill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Table row hover fix for striped tables ─────────────────────────────── */
+.table-striped tbody tr:nth-child(even) td {
+  background-color: #fafafa;
+}
+.table-striped tbody tr:hover td {
+  background-color: #f0f4ff;
+}
+
+/* ─── Modal animations ────────────────────────────────────────────────────── */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+}
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-exit {
+  opacity: 1;
+}
+.modal-exit-active {
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+  transition: opacity 150ms ease-in, transform 150ms ease-in;
+}
+
+/* ─── File uploader drag states ──────────────────────────────────────────── */
+.dropzone-active {
+  border-color: #4f46e5 !important;
+  background-color: #eef2ff !important;
+}
+.dropzone-reject {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+/* ─── Sidebar mobile overlay ──────────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 39;
+}
+
+/* ─── Print layout overrides ─────────────────────────────────────────────── */
+@media print {
+  .sidebar-student,
+  .sidebar-professor,
+  .sidebar-admin,
+  nav[role="navigation"] {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+}
+
+/* ─── Attendance bar animation ────────────────────────────────────────────── */
+@keyframes fillBar {
+  from { width: 0%; }
+}
+.animate-fill-bar {
+  animation: fillBar 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ─── Notification pulse ring ─────────────────────────────────────────────── */
+@keyframes pingOnce {
+  0%   { transform: scale(1);    opacity: 0.8; }
+  80%  { transform: scale(2.2);  opacity: 0;   }
+  100% { transform: scale(2.2);  opacity: 0;   }
+}
+.ping-once {
+  animation: pingOnce 0.6s ease-out forwards;
+}
+
+/* ─── Smooth page transitions ─────────────────────────────────────────────── */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 250ms ease-out, transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Range input (attendance threshold slider) ───────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: #e5e7eb;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  transition: box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.2);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  border: none;
+}
+
+/* ─── Date / time input icon colour ──────────────────────────────────────── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: opacity(0.5);
+  cursor: pointer;
+}
+
+/* ─── Focus ring for checkboxes & radios ─────────────────────────────────── */
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* ─── Thin scrollbar for modals / panels ─────────────────────────────────── */
+.thin-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+
+/* ─── CGPA / grade colour classes used by recharts cells ─────────────────── */
+.fill-grade-o   { fill: #10b981; }
+.fill-grade-ap  { fill: #3b82f6; }
+.fill-grade-a   { fill: #6366f1; }
+.fill-grade-bp  { fill: #8b5cf6; }
+.fill-grade-b   { fill: #f59e0b; }
+.fill-grade-c   { fill: #f97316; }
+.fill-grade-f   { fill: #ef4444; }

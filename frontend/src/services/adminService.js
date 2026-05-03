@@ -36,10 +36,18 @@ export const adminService = {
     return data;
   },
 
-  bulkImportUsers: async (formData) => {
-    const { data } = await api.post("/admin/users/bulk-import", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  getStudents: async (params = {}) => {
+    const { data } = await api.get("/admin/students", { params });
+    return data;
+  },
+
+  getIntegrityReport: async () => {
+    const { data } = await api.get("/admin/ai/integrity-report");
+    return data;
+  },
+
+  getStudentPerformance: async (studentId) => {
+    const { data } = await api.get(`/admin/ai/student-performance/${studentId}`);
     return data;
   },
 
@@ -95,6 +103,28 @@ export const adminService = {
 
   assignFacultyToSubject: async (subjectId, professorId) => {
     const { data } = await api.put(`/admin/subjects/${subjectId}/assign-faculty`, { professorId });
+    return data;
+  },
+
+  getStudents: async (params = {}) => {
+    const { data } = await api.get("/admin/students", { params });
+    return data;
+  },
+
+  bulkImportStudents: async (formData) => {
+    const { data } = await api.post("/admin/students/bulk-import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+
+  getIntegrityReport: async () => {
+    const { data } = await api.get("/admin/ai/integrity-report");
+    return data;
+  },
+
+  getStudentPerformancePrediction: async (studentId) => {
+    const { data } = await api.get(`/admin/ai/student-performance/${studentId}`);
     return data;
   },
 

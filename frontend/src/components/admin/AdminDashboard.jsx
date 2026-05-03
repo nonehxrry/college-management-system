@@ -41,15 +41,41 @@ const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) =>
 };
 
 const AdminDashboard = () => {
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [integrityReport, setIntegrityReport] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [dashboardRes, integrityRes] = await Promise.all([
+          adminService.getDashboard(),
+          adminService.getIntegrityReport()
+        ]);
+        setData(dashboardRes.data);
+        setIntegrityReport(integrityRes.data);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>;
+  }
+
+  const stats = data || { totalStudents: 0, totalProfessors: 0, totalDepartments: 0, totalSubjects: 0, pendingTickets: 0, totalNotices: 0, activeStudents: 0, publishedResults: 0, feesCollected: 0 };
 
   const quickActions = [
     { label: "Add Student", icon: "👤", path: "/admin/users", color: "bg-blue-500" },
-    { label: "Add Professor", icon: "👨‍🏫", path: "/admin/users", color: "bg-emerald-500" },
-    { label: "Publish Results", icon: "📊", path: "/admin/results", color: "bg-purple-500" },
+    { label: "Bulk Import", icon: "📤", path: "/admin/students", color: "bg-indigo-500" },
+    { label: "AI Integrity", icon: "🤖", path: "/admin/ai", color: "bg-purple-500" },
+    { label: "Publish Results", icon: "📊", path: "/admin/results", color: "bg-emerald-500" },
     { label: "Send Notice", icon: "📢", path: "/admin/notices", color: "bg-amber-500" },
-    { label: "Create Date Sheet", icon: "📆", path: "/admin/datesheet", color: "bg-red-500" },
     { label: "System Settings", icon: "⚙️", path: "/admin/settings", color: "bg-gray-600" },
   ];
 
@@ -67,11 +93,38 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Students" value={mockStats.totalStudents.toLocaleString()} icon="👥" color="blue" change="+48 this month" changeType="up" onClick={() => navigate("/admin/users")} />
-        <StatCard label="Professors" value={mockStats.totalProfessors} icon="👨‍🏫" color="green" change="+3 this month" changeType="up" onClick={() => navigate("/admin/users")} />
-        <StatCard label="Departments" value={mockStats.totalDepartments} icon="🏛️" color="purple" onClick={() => navigate("/admin/academics")} />
-        <StatCard label="Active Courses" value={mockStats.totalCourses} icon="📚" color="amber" onClick={() => navigate("/admin/academics")} />
+        <StatCard label="Total Students" value={stats.totalStudents.toLocaleString()} icon="👥" color="blue" change={`${stats.activeStudents} active`} onClick={() => navigate("/admin/students")} />
+        <StatCard label="Professors" value={stats.totalProfessors} icon="👨‍🏫" color="green" onClick={() => navigate("/admin/users")} />
+        <StatCard label="Departments" value={stats.totalDepartments} icon="🏛️" color="purple" onClick={() => navigate("/admin/academics")} />
+        <StatCard label="Subjects" value={stats.totalSubjects} icon="📚" color="amber" onClick={() => navigate("/admin/academics")} />
+        <StatCard label="Published Results" value={stats.publishedResults} icon="📊" color="emerald" onClick={() => navigate("/admin/results")} />
+        <StatCard label="Fees Collected" value={`₹${stats.feesCollected.toLocaleString()}`} icon="💰" color="teal" onClick={() => navigate("/admin/fees")} />
+        <StatCard label="Pending Tickets" value={stats.pendingTickets} icon="🎫" color="red" onClick={() => navigate("/admin/tickets")} />
+        <StatCard label="Active Notices" value={stats.totalNotices} icon="📢" color="orange" onClick={() => navigate("/admin/notices")} />
       </div>
+
+      {integrityReport && (
+        <div className="card">
+          <h3 className="font-display font-bold text-gray-900 mb-4">AI Integrity Report</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`p-4 rounded-lg ${integrityReport.overallHealth === 'good' ? 'bg-green-50 border-green-200' : integrityReport.overallHealth === 'warning' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="text-2xl mb-2">{integrityReport.overallHealth === 'good' ? '✅' : integrityReport.overallHealth === 'warning' ? '⚠️' : '❌'}</div>
+              <div className="font-semibold">System Health: {integrityReport.overallHealth}</div>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl mb-2">🔍</div>
+              <div className="font-semibold">{integrityReport.duplicates} Duplicates Found</div>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="text-2xl mb-2">🚨</div>
+              <div className="font-semibold">{integrityReport.anomalies} Data Anomalies</div>
+            </div>
+          </div>
+          <button onClick={() => navigate("/admin/ai")} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            View Full Report
+          </button>
+        </div>
+      )}
 
       <div>
         <h3 className="font-display font-semibold text-gray-800 mb-3">Quick Actions</h3>

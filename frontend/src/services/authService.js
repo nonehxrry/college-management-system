@@ -3,11 +3,17 @@ import { storage } from "../utils/helpers";
 
 export const authService = {
   login: async (email, password, role) => {
-    const { data } = await api.post("/auth/login", { email, password, role });
-    storage.set("accessToken",  data.accessToken);
-    storage.set("refreshToken", data.refreshToken);
-    storage.set("user",         data.user);
-    return data;
+    try {
+      const { data } = await api.post("/auth/login", { email, password, role });
+      console.log("✅ Login response:", data);
+      storage.set("accessToken",  data.accessToken);
+      storage.set("refreshToken", data.refreshToken);
+      storage.set("user",         data.user);
+      return data;
+    } catch (error) {
+      console.error("❌ Login error:", error.response?.data || error.message);
+      throw error;
+    }
   },
 
   logout: async () => {

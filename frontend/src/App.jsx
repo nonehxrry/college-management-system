@@ -33,11 +33,13 @@ import ProfessorAnalytics     from "./pages/professor/Analytics";
 /* ─── Admin pages ────────────────────────────────────────────────────────── */
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers     from "./pages/admin/Users";
+import AdminStudents  from "./pages/admin/Students";
 import AdminAcademics from "./pages/admin/Academics";
 import AdminResults   from "./pages/admin/Results";
 import AdminNotices   from "./pages/admin/Notices";
 import AdminDateSheet from "./pages/admin/DateSheet";
 import AdminFees      from "./pages/admin/Fees";
+import AdminAI         from "./pages/admin/AI";
 import AdminSettings  from "./pages/admin/Settings";
 
 // ─── Helper: update <title> without react-helmet-async ───────────────────────
@@ -96,7 +98,9 @@ const NAV_ITEMS = {
   admin: [
     { path: "/admin/dashboard",  icon: "🏠", label: "Dashboard"  },
     { path: "/admin/users",      icon: "👥", label: "Users"      },
+    { path: "/admin/students",   icon: "👨‍🎓", label: "Students"   },
     { path: "/admin/academics",  icon: "🎓", label: "Academics"  },
+    { path: "/admin/ai",         icon: "🤖", label: "AI Integrity" },
     { path: "/admin/results",    icon: "📊", label: "Results"    },
     { path: "/admin/notices",    icon: "📢", label: "Notices"    },
     { path: "/admin/date-sheet", icon: "📆", label: "Date Sheet" },
@@ -193,9 +197,9 @@ const App = () => (
       {/* ADMIN */}
       <Route element={<RequireRole role="admin" />}>
         <Route element={<AppShell role="admin" />}>
-          <Route path="/admin/dashboard"  element={<><PageTitle title="Dashboard" /><AdminDashboard /></>} />
-          <Route path="/admin/users"      element={<><PageTitle title="User Management" /><AdminUsers /></>} />
+          <Route path="/admin/dashboard"  element={<><PageTitle title="Dashboard" /><AdminDashboard /></>} />          <Route path="/admin/students"   element={<><PageTitle title="Students" /><AdminStudents /></>} />          <Route path="/admin/users"      element={<><PageTitle title="User Management" /><AdminUsers /></>} />
           <Route path="/admin/academics"  element={<><PageTitle title="Academics" /><AdminAcademics /></>} />
+          <Route path="/admin/ai"         element={<><PageTitle title="AI Integrity" /><AdminAI /></>} />
           <Route path="/admin/results"    element={<><PageTitle title="Results" /><AdminResults /></>} />
           <Route path="/admin/notices"    element={<><PageTitle title="Notices" /><AdminNotices /></>} />
           <Route path="/admin/date-sheet" element={<><PageTitle title="Date Sheet" /><AdminDateSheet /></>} />

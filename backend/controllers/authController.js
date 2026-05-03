@@ -8,18 +8,20 @@ const { generateToken, generateRefreshToken, verifyRefreshToken } = require("../
 const { sendEmail } = require("../utils/sendEmail");
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body; // Added role from request
 
   if (!email || !password) {
     res.status(400);
     throw new Error("Email and password are required");
   }
 
-  const user = await User.findOne({ email }).select("+password");
+  // 1. Check for user by email AND role to match the frontend tab selection
+  const user = await User.findOne({ email, role }).select("+password");
 
+  // 2. Comprehensive check: User exists, Role matches, and Password matches
   if (!user || !(await user.comparePassword(password))) {
     res.status(401);
-    throw new Error("Invalid email or password");
+    throw new Error("Invalid email, password, or role");
   }
 
   if (!user.isActive) {
@@ -27,10 +29,20 @@ const login = asyncHandler(async (req, res) => {
     throw new Error("Account is deactivated. Contact admin.");
   }
 
-  user.lastLogin = new Date();
   const refreshToken = generateRefreshToken(user._id);
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
+
+  // 3. Update last login and refresh token
+  // Using updateOne is fine here as we don't want to re-hash the password
+  await User.updateOne(
+    { _id: user._id },
+    { 
+      $set: { 
+        lastLogin: new Date(), 
+        refreshToken: refreshToken 
+      } 
+    },
+    { runValidators: false }
+  );
 
   let profileData = null;
   if (user.role === "student") {
@@ -56,7 +68,7 @@ const login = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Login successful",
-    token: generateToken(user._id, user.role),
+    accessToken: generateToken(user._id, user.role),
     refreshToken,
     user: {
       _id: user._id,
@@ -65,7 +77,7 @@ const login = asyncHandler(async (req, res) => {
       role: user.role,
       profilePicture: user.profilePicture,
       phone: user.phone,
-      lastLogin: user.lastLogin,
+      lastLogin: new Date(), // Use current date for immediate response
     },
     profile: profileData,
   });
@@ -89,12 +101,15 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   const newToken = generateToken(user._id, user.role);
   const newRefreshToken = generateRefreshToken(user._id);
-  user.refreshToken = newRefreshToken;
-  await user.save({ validateBeforeSave: false });
+  await User.updateOne(
+    { _id: user._id },
+    { refreshToken: newRefreshToken },
+    { runValidators: false }
+  );
 
   res.status(200).json({
     success: true,
-    token: newToken,
+    accessToken: newToken,
     refreshToken: newRefreshToken,
   });
 });

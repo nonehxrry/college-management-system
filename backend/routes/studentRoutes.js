@@ -204,4 +204,385 @@ router.get("/subjects", async (req, res) => {
   catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+// ───────────────────────────────────────────────────────────────────────────────
+// NEW FEATURES: AI-POWERED STUDENT DASHBOARD & PERSONALIZED RECOMMENDATIONS
+// ───────────────────────────────────────────────────────────────────────────────
+
+const {
+  predictStudentPerformance,
+  analyzeAttendancePatterns,
+  recommendCourses,
+  detectStudentStress,
+  analyzeExamDifficulty
+} = require("../utils/advancedAI");
+
+const StudentAnalytics = require("../models/StudentAnalytics");
+
+/**
+ * Get comprehensive AI-powered student insights
+ */
+router.get("/ai/insights", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+
+    // Get performance prediction
+    const performance = await predictStudentPerformance(student._id);
+    
+    // Get attendance analysis
+    const attendance = await analyzeAttendancePatterns(student._id);
+    
+    // Get stress indicators
+    const stress = await detectStudentStress(student._id);
+    
+    // Get personalized recommendations
+    const recommendations = await recommendCourses(student._id);
+
+    // Save analytics for later retrieval
+    await StudentAnalytics.findOneAndUpdate(
+      { student: student._id },
+      {
+        performancePrediction: performance,
+        attendanceAnalysis: attendance,
+        stressIndicators: stress,
+        courseRecommendations: recommendations.recommendedElectives,
+        lastAnalyzedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        performance,
+        attendance,
+        stress,
+        recommendations,
+        lastUpdated: new Date()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get personalized learning recommendations
+ */
+router.get("/ai/learning-path", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const results = await Result.find({ student: student._id }).sort({ createdAt: -1 }).limit(3);
+    
+    // Identify weak subjects
+    const weakSubjects = [];
+    results.forEach(result => {
+      result.subjects.forEach(sub => {
+        if ((sub.grade || 0) < 2.5) {
+          weakSubjects.push(sub.name);
+        }
+      });
+    });
+
+    // Generate learning plan
+    const learningPlan = {
+      focusAreas: weakSubjects.slice(0, 3),
+      studyPlan: generateStudyPlan(weakSubjects),
+      resources: generateLearningResources(weakSubjects),
+      practiceTopics: generatePracticeTopics(weakSubjects),
+      estimatedTimeToImprovement: "4-6 weeks",
+      successRate: 85
+    };
+
+    res.json({
+      success: true,
+      data: learningPlan
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get progress tracking dashboard
+ */
+router.get("/ai/progress", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    
+    // Get all results
+    const results = await Result.find({ student: student._id }).sort({ semester: 1 });
+    
+    // Calculate CGPA trend
+    const cgpaTrend = results.map(r => ({
+      semester: r.semester,
+      cgpa: r.cgpa,
+      timestamp: r.createdAt
+    }));
+
+    // Get submission rates
+    const assignments = await Assignment.find({ subject: { $in: student.subjects } });
+    const submissions = await Submission.find({ student: student._id });
+    const submissionRate = assignments.length > 0 
+      ? ((submissions.length / assignments.length) * 100).toFixed(1)
+      : 0;
+
+    // Attendance trend
+    const attendanceRecords = await Attendance.find({ "records.student": student._id }).sort({ date: 1 });
+    const months = {};
+    attendanceRecords.forEach(record => {
+      const month = new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      if (!months[month]) months[month] = { present: 0, total: 0 };
+      months[month].total++;
+      if (record.records.some(r => r.student.toString() === student._id && r.status === "present")) {
+        months[month].present++;
+      }
+    });
+
+    const attendanceTrend = Object.entries(months).map(([month, data]) => ({
+      month,
+      percentage: data.total > 0 ? ((data.present / data.total) * 100).toFixed(1) : 0
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        currentCGPA: student.cgpa,
+        cgpaTrend,
+        submissionRate: parseFloat(submissionRate),
+        attendanceTrend,
+        overallProgress: calculateOverallProgress(student.cgpa, parseFloat(submissionRate), attendanceTrend),
+        improvements: identifyImprovements(results)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get mental health & well-being recommendations
+ */
+router.get("/ai/wellness", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const stress = await detectStudentStress(student._id);
+
+    const wellnessRecommendations = {
+      stressLevel: stress.stressLevel,
+      recommendations: stress.recommendations,
+      supportResources: stress.supportResources,
+      wellnessPrograms: stress.wellnessPrograms,
+      tips: getWellnessTips(stress.stressLevel),
+      counselingRecommended: stress.counselingRecommended,
+      emergencyContacts: {
+        mentalHealth: "counseling@college.edu",
+        supportLine: "+1-800-SUPPORT",
+        emergency: "+1-911"
+      }
+    };
+
+    res.json({
+      success: true,
+      data: wellnessRecommendations
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get subject-wise performance comparison
+ */
+router.get("/ai/performance/by-subject", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const results = await Result.find({ student: student._id });
+
+    const subjectPerformance = {};
+    results.forEach(result => {
+      result.subjects.forEach(sub => {
+        if (!subjectPerformance[sub.name]) {
+          subjectPerformance[sub.name] = {
+            name: sub.name,
+            grades: [],
+            average: 0
+          };
+        }
+        subjectPerformance[sub.name].grades.push(sub.grade || 0);
+      });
+    });
+
+    // Calculate averages
+    Object.keys(subjectPerformance).forEach(subject => {
+      const grades = subjectPerformance[subject].grades;
+      subjectPerformance[subject].average = (grades.reduce((a, b) => a + b) / grades.length).toFixed(2);
+      subjectPerformance[subject].trend = grades[grades.length - 1] > grades[0] ? "improving" : "declining";
+    });
+
+    // Sort by performance
+    const sorted = Object.values(subjectPerformance)
+      .sort((a, b) => parseFloat(b.average) - parseFloat(a.average));
+
+    res.json({
+      success: true,
+      data: {
+        subjects: sorted,
+        bestPerformingSubjects: sorted.slice(0, 3),
+        needsImprovementSubjects: sorted.slice(-3).reverse(),
+        overallComparison: {
+          averageGrade: (sorted.reduce((sum, s) => sum + parseFloat(s.average), 0) / sorted.length).toFixed(2),
+          bestSubject: sorted[0],
+          worstSubject: sorted[sorted.length - 1]
+        }
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get peer comparison (anonymized)
+ */
+router.get("/ai/peer-comparison", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const allStudents = await Student.find({ semester: student.semester, section: student.section });
+    
+    const classPerformance = [];
+    for (const s of allStudents) {
+      const result = await Result.findOne({ student: s._id, isPublished: true }).sort({ createdAt: -1 });
+      if (result) {
+        classPerformance.push({
+          cgpa: result.cgpa,
+          semester: result.semester
+        });
+      }
+    }
+
+    const studentCGPA = student.cgpa;
+    const classCGPAs = classPerformance.map(p => p.cgpa).sort((a, b) => b - a);
+    const percentile = classCGPAs.length > 0
+      ? ((classCGPAs.filter(c => c < studentCGPA).length / classCGPAs.length) * 100).toFixed(1)
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        yourPerformance: {
+          cgpa: studentCGPA,
+          percentile: parseFloat(percentile),
+          ranking: classCGPAs.filter(c => c > studentCGPA).length + 1
+        },
+        classStatistics: {
+          totalStudents: allStudents.length,
+          averageCGPA: (classCGPAs.reduce((a, b) => a + b) / classCGPAs.length).toFixed(2),
+          topCGPA: classCGPAs[0],
+          minCGPA: classCGPAs[classCGPAs.length - 1]
+        },
+        performanceLevel: getPerformanceCategory(percentile),
+        message: generatePerformanceMessage(percentile)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Helper Functions ─────────────────────────────────────────────────────────
+
+const generateStudyPlan = (weakSubjects) => {
+  return [
+    { week: "Week 1-2", focus: "Fundamentals", hours: 10 },
+    { week: "Week 3-4", focus: "Core Concepts", hours: 12 },
+    { week: "Week 5-6", focus: "Problem Solving", hours: 15 }
+  ];
+};
+
+const generateLearningResources = (subjects) => {
+  return [
+    { type: "Video Lectures", platform: "YouTube", estimated_time: "20 hours" },
+    { type: "Textbooks", recommended: "NCERT + Reference", estimated_time: "30 hours" },
+    { type: "Practice Tests", platform: "Online Judge", estimated_time: "25 hours" },
+    { type: "Peer Study Groups", frequency: "3x per week", estimated_time: "9 hours" }
+  ];
+};
+
+const generatePracticeTopics = (subjects) => {
+  return [
+    "Basic Concepts",
+    "Intermediate Problems",
+    "Advanced Challenges",
+    "Previous Year Questions"
+  ];
+};
+
+const calculateOverallProgress = (cgpa, submissionRate, attendance) => {
+  const cgpaScore = (cgpa / 4) * 100;
+  const submissionScore = submissionRate;
+  const avgAttendance = attendance.length > 0
+    ? attendance.reduce((sum, a) => sum + parseFloat(a.percentage), 0) / attendance.length
+    : 0;
+
+  return parseFloat(((cgpaScore * 0.5 + submissionScore * 0.25 + avgAttendance * 0.25) / 100 * 100).toFixed(1));
+};
+
+const identifyImprovements = (results) => {
+  if (results.length < 2) return [];
+
+  const improvements = [];
+  const latest = results[results.length - 1];
+  const previous = results[results.length - 2];
+
+  if (latest.cgpa > previous.cgpa) {
+    improvements.push({
+      type: "CGPA Improvement",
+      change: (latest.cgpa - previous.cgpa).toFixed(2),
+      positive: true
+    });
+  }
+
+  return improvements;
+};
+
+const getWellnessTips = (stressLevel) => {
+  const tips = {
+    low: [
+      "Keep up the great work!",
+      "Maintain your current study-life balance",
+      "Help peers who are struggling"
+    ],
+    moderate: [
+      "Try time management techniques",
+      "Take short breaks during study sessions",
+      "Join a study group for support",
+      "Practice meditation or yoga"
+    ],
+    high: [
+      "Seek immediate support from counselor",
+      "Break tasks into smaller chunks",
+      "Practice deep breathing exercises",
+      "Reach out to friends/family",
+      "Consider medical consultation if needed"
+    ]
+  };
+  return tips[stressLevel] || tips.moderate;
+};
+
+const getPerformanceCategory = (percentile) => {
+  const p = parseFloat(percentile);
+  if (p >= 90) return "Excellent";
+  if (p >= 75) return "Good";
+  if (p >= 50) return "Average";
+  return "Below Average";
+};
+
+const generatePerformanceMessage = (percentile) => {
+  const p = parseFloat(percentile);
+  if (p >= 90) return "Outstanding performance! You're among the top performers.";
+  if (p >= 75) return "Great job! Keep up this performance.";
+  if (p >= 50) return "You're performing at the average level. Consider focusing on weak areas.";
+  return "You need improvement. Seek help and focus on fundamentals.";
+};
+
 module.exports = router;

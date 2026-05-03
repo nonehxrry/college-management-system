@@ -216,4 +216,393 @@ router.put("/profile", upload.single("photo"), async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-module.exports = router;  
+// ───────────────────────────────────────────────────────────────────────────────
+// NEW FEATURES: ADVANCED AI INSIGHTS FOR PROFESSOR PANEL
+// ───────────────────────────────────────────────────────────────────────────────
+
+const {
+  detectPlagiarism,
+  analyzeCodeSimilarity
+} = require("../utils/plagiarismDetection");
+
+const PlagiarismReport = require("../models/PlagiarismReport");
+
+/**
+ * Get advanced analytics dashboard for professor
+ */
+router.get("/ai/dashboard", async (req, res) => {
+  try {
+    const professor = await getProfessor(req.user._id);
+
+    // Get submissions statistics
+    const totalSubmissions = await Submission.countDocuments({ professor: professor._id });
+    const gradedSubmissions = await Submission.countDocuments({ professor: professor._id, marksObtained: { $exists: true } });
+    const pendingGrading = totalSubmissions - gradedSubmissions;
+
+    // Get average grades
+    const gradeStats = await Submission.aggregate([
+      { $match: { professor: professor._id, marksObtained: { $exists: true } } },
+      { $group: { _id: null, avgMarks: { $avg: "$marksObtained" }, maxMarks: { $max: "$maxMarks" } } }
+    ]);
+
+    // Get assignment performance trends
+    const assignments = await Assignment.find({ professor: professor._id }).limit(10);
+    const assignmentStats = await Promise.all(
+      assignments.map(async (a) => {
+        const submissions = await Submission.find({ assignment: a._id, marksObtained: { $exists: true } });
+        const avgScore = submissions.length > 0
+          ? (submissions.reduce((sum, s) => sum + s.marksObtained, 0) / submissions.length).toFixed(2)
+          : 0;
+        return {
+          assignmentId: a._id,
+          title: a.title,
+          submissionCount: submissions.length,
+          averageScore: avgScore
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: {
+        submissions: {
+          total: totalSubmissions,
+          graded: gradedSubmissions,
+          pending: pendingGrading,
+          gradingPercentage: totalSubmissions > 0 ? ((gradedSubmissions / totalSubmissions) * 100).toFixed(1) : 0
+        },
+        grades: gradeStats[0] || { avgMarks: 0, maxMarks: 0 },
+        assignmentPerformance: assignmentStats,
+        recommendations: generateProfessorRecommendations(pendingGrading, totalSubmissions)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get student-wise performance analysis for a subject
+ */
+router.get("/ai/analytics/subject/:subjectId/students", async (req, res) => {
+  try {
+    const subject = await Subject.findById(req.params.subjectId);
+    if (!subject) return res.status(404).json({ success: false, message: "Subject not found" });
+
+    const students = await Student.find({ subjects: req.params.subjectId })
+      .populate("user", "name email")
+      .select("_id user rollNumber semester cgpa");
+
+    // Analyze each student's performance
+    const studentAnalytics = await Promise.all(
+      students.map(async (student) => {
+        // Get results for this student in this subject
+        const results = await Result.find({ student: student._id, "subjects.subject": req.params.subjectId });
+        const grades = results.flatMap(r => 
+          r.subjects.filter(s => s.subject.toString() === req.params.subjectId).map(s => s.grade || 0)
+        );
+
+        // Get attendance
+        const attendance = await Attendance.find({ subject: req.params.subjectId, "records.student": student._id });
+        const presentDays = attendance.filter(a => 
+          a.records.some(r => r.student.toString() === student._id && r.status === "present")
+        ).length;
+        const attendancePercentage = attendance.length > 0 ? ((presentDays / attendance.length) * 100).toFixed(1) : 0;
+
+        // Get submissions
+        const submissions = await Submission.find({ student: student._id });
+        const gradedSubmissions = submissions.filter(s => s.marksObtained !== undefined);
+        const averageSubmissionScore = gradedSubmissions.length > 0
+          ? (gradedSubmissions.reduce((sum, s) => sum + (s.marksObtained || 0), 0) / gradedSubmissions.length).toFixed(2)
+          : 0;
+
+        return {
+          studentId: student._id,
+          name: student.user.name,
+          rollNumber: student.rollNumber,
+          examGrades: grades,
+          averageGrade: grades.length > 0 ? (grades.reduce((a, b) => a + b) / grades.length).toFixed(2) : "N/A",
+          attendance: parseFloat(attendancePercentage),
+          assignmentAverage: parseFloat(averageSubmissionScore),
+          performanceLevel: getPerformanceLevel(grades, attendancePercentage),
+          riskIndicators: getRiskIndicators(grades, attendancePercentage, gradedSubmissions.length)
+        };
+      })
+    );
+
+    // Sort by performance
+    studentAnalytics.sort((a, b) => {
+      const scoreA = parseFloat(a.averageGrade) || 0;
+      const scoreB = parseFloat(b.averageGrade) || 0;
+      return scoreB - scoreA;
+    });
+
+    res.json({
+      success: true,
+      data: studentAnalytics,
+      summary: {
+        totalStudents: studentAnalytics.length,
+        averagePerformance: (studentAnalytics.reduce((sum, s) => sum + (parseFloat(s.averageGrade) || 0), 0) / studentAnalytics.length).toFixed(2),
+        topPerformers: studentAnalytics.filter(s => s.performanceLevel === "excellent").length,
+        needsHelp: studentAnalytics.filter(s => s.performanceLevel === "poor").length
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Get assignment quality analysis and insights
+ */
+router.get("/ai/analytics/assignments/:assignmentId/quality", async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.assignmentId);
+    if (!assignment) return res.status(404).json({ success: false, message: "Assignment not found" });
+
+    const submissions = await Submission.find({ assignment: req.params.assignmentId })
+      .populate({ path: "student", populate: { path: "user", select: "name" } });
+
+    // Analyze grade distribution
+    const grades = submissions
+      .filter(s => s.marksObtained !== undefined)
+      .map(s => s.marksObtained);
+
+    const gradeRanges = {
+      excellent: grades.filter(g => g >= (assignment.maxMarks * 0.8)).length,
+      good: grades.filter(g => g >= (assignment.maxMarks * 0.6) && g < (assignment.maxMarks * 0.8)).length,
+      average: grades.filter(g => g >= (assignment.maxMarks * 0.4) && g < (assignment.maxMarks * 0.6)).length,
+      below_average: grades.filter(g => g < (assignment.maxMarks * 0.4)).length
+    };
+
+    const avgScore = grades.length > 0 ? (grades.reduce((a, b) => a + b) / grades.length).toFixed(2) : 0;
+
+    // Late submissions analysis
+    const lateSubmissions = submissions.filter(s => 
+      s.submittedAt > new Date(assignment.deadline)
+    ).length;
+
+    res.json({
+      success: true,
+      data: {
+        assignment: {
+          title: assignment.title,
+          maxMarks: assignment.maxMarks,
+          deadline: assignment.deadline
+        },
+        statistics: {
+          totalSubmissions: submissions.length,
+          gradedSubmissions: grades.length,
+          averageScore: avgScore,
+          onTimeSubmissions: submissions.length - lateSubmissions,
+          lateSubmissions,
+          lateSubmissionRate: submissions.length > 0 ? ((lateSubmissions / submissions.length) * 100).toFixed(1) : 0
+        },
+        gradeDistribution: gradeRanges,
+        recommendations: generateAssignmentRecommendations(gradeRanges, lateSubmissions, submissions.length),
+        strugglingStudents: submissions
+          .filter(s => s.marksObtained !== undefined && s.marksObtained < (assignment.maxMarks * 0.4))
+          .map(s => ({
+            name: s.student.user.name,
+            score: s.marksObtained,
+            percentage: ((s.marksObtained / assignment.maxMarks) * 100).toFixed(1),
+            needsSupport: true
+          }))
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Analyze class performance and engagement
+ */
+router.get("/ai/analytics/class-performance/:subjectId", async (req, res) => {
+  try {
+    const subject = await Subject.findById(req.params.subjectId);
+    if (!subject) return res.status(404).json({ success: false, message: "Subject not found" });
+
+    // Get all students in class
+    const students = await Student.find({ subjects: req.params.subjectId });
+
+    // Attendance analysis
+    const attendanceRecords = await Attendance.find({ subject: req.params.subjectId });
+    const totalClasses = attendanceRecords.length;
+
+    let totalAttendance = 0;
+    let lowAttendanceStudents = 0;
+    students.forEach(student => {
+      const presentDays = attendanceRecords.filter(a =>
+        a.records.some(r => r.student.toString() === student._id && r.status === "present")
+      ).length;
+      const percentage = totalClasses > 0 ? (presentDays / totalClasses) * 100 : 0;
+      totalAttendance += percentage;
+      if (percentage < 75) lowAttendanceStudents++;
+    });
+
+    const avgAttendance = students.length > 0 ? (totalAttendance / students.length).toFixed(1) : 0;
+
+    // Assignment engagement
+    const assignments = await Assignment.find({ subject: req.params.subjectId });
+    const allSubmissions = await Submission.find({
+      assignment: { $in: assignments.map(a => a._id) }
+    });
+
+    const submissionRate = allSubmissions.length > 0
+      ? (allSubmissions.length / (assignments.length * students.length) * 100).toFixed(1)
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        subject: {
+          name: subject.name,
+          code: subject.code,
+          studentCount: students.length,
+          totalClasses
+        },
+        attendance: {
+          averagePercentage: parseFloat(avgAttendance),
+          studentsWithLowAttendance: lowAttendanceStudents,
+          riskLevel: avgAttendance < 75 ? "high" : avgAttendance < 85 ? "medium" : "low"
+        },
+        assignments: {
+          total: assignments.length,
+          totalSubmissions: allSubmissions.length,
+          submissionRate: parseFloat(submissionRate),
+          averageGrade: allSubmissions.length > 0
+            ? (allSubmissions.reduce((sum, s) => sum + (s.marksObtained || 0), 0) / allSubmissions.length).toFixed(2)
+            : 0
+        },
+        classEngagement: {
+          level: submissionRate > 80 ? "high" : submissionRate > 60 ? "moderate" : "low",
+          engagementScore: parseFloat(submissionRate)
+        },
+        recommendations: generateClassRecommendations(avgAttendance, submissionRate, students.length, lowAttendanceStudents)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Plagiarism detection for assignment submissions
+ */
+router.post("/ai/plagiarism/check-assignment/:assignmentId", async (req, res) => {
+  try {
+    const submissions = await Submission.find({ assignment: req.params.assignmentId })
+      .populate("student");
+
+    const plagiarismResults = [];
+
+    // Check each submission against others
+    for (let i = 0; i < submissions.length; i++) {
+      for (let j = i + 1; j < submissions.length; j++) {
+        const result = await detectPlagiarism(submissions[i], [submissions[j]]);
+        if (result.overallSimilarity > 70) {
+          plagiarismResults.push({
+            submission1: {
+              id: submissions[i]._id,
+              studentName: submissions[i].student.user?.name
+            },
+            submission2: {
+              id: submissions[j]._id,
+              studentName: submissions[j].student.user?.name
+            },
+            similarity: result.overallSimilarity,
+            suspiciousLevel: result.suspiciousLevel
+          });
+        }
+      }
+    }
+
+    // Sort by similarity
+    plagiarismResults.sort((a, b) => b.similarity - a.similarity);
+
+    res.json({
+      success: true,
+      data: {
+        totalSubmissions: submissions.length,
+        suspiciousMatches: plagiarismResults.length,
+        results: plagiarismResults.slice(0, 10),
+        recommendation: plagiarismResults.length > 0 ? "Review flagged submissions" : "No suspicious matches found"
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Helper Functions ─────────────────────────────────────────────────────────
+
+const generateProfessorRecommendations = (pending, total) => {
+  const recommendations = [];
+  
+  if (pending > 10) {
+    recommendations.push("High number of pending submissions - prioritize grading");
+  }
+  
+  if (total > 0 && (pending / total) > 0.3) {
+    recommendations.push("Consider extending grading deadline or getting assistance");
+  }
+  
+  return recommendations;
+};
+
+const getPerformanceLevel = (grades, attendance) => {
+  const avgGrade = grades.length > 0 ? grades.reduce((a, b) => a + b) / grades.length : 0;
+  const att = parseFloat(attendance) || 0;
+  
+  if (avgGrade >= 3.5 && att >= 90) return "excellent";
+  if (avgGrade >= 3.0 && att >= 80) return "good";
+  if (avgGrade >= 2.0 && att >= 75) return "average";
+  return "poor";
+};
+
+const getRiskIndicators = (grades, attendance, submissionCount) => {
+  const risks = [];
+  const avgGrade = grades.length > 0 ? grades.reduce((a, b) => a + b) / grades.length : 0;
+  const att = parseFloat(attendance) || 0;
+  
+  if (att < 75) risks.push("Low attendance");
+  if (avgGrade < 2.0) risks.push("Low exam scores");
+  if (submissionCount === 0) risks.push("No assignment submissions");
+  
+  return risks;
+};
+
+const generateAssignmentRecommendations = (distribution, lateCount, total) => {
+  const recommendations = [];
+  
+  if (distribution.below_average > (total * 0.3)) {
+    recommendations.push("Many students scoring below 40% - review teaching approach");
+  }
+  
+  if ((lateCount / total) > 0.2) {
+    recommendations.push("High late submission rate - consider extension");
+  }
+  
+  if (distribution.excellent === 0) {
+    recommendations.push("No excellent scores - assignment might be too difficult");
+  }
+  
+  return recommendations;
+};
+
+const generateClassRecommendations = (attendance, engagement, studentCount, lowAttendance) => {
+  const recommendations = [];
+  
+  if (attendance < 75) {
+    recommendations.push(`${lowAttendance} students have attendance below 75% - follow up required`);
+  }
+  
+  if (engagement < 60) {
+    recommendations.push("Low assignment engagement - consider incentives or easier tasks");
+  }
+  
+  return recommendations;
+};
+
+module.exports = router;

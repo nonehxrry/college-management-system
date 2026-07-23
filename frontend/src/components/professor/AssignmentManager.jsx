@@ -56,7 +56,7 @@ const AssignmentManager = () => {
       Object.entries(form).forEach(([k, v]) => formData.append(k, Array.isArray(v) ? JSON.stringify(v) : v));
       if (attachmentFile) formData.append("attachment", attachmentFile);
       await professorService.createAssignment(formData);
-      toast.success("Assignment created successfully! 🎉");
+      toast.success("Assignment created successfully.");
       setCreateModal(false);
     } catch { toast.error("Failed to create assignment"); }
     finally { setSaving(false); }
@@ -75,7 +75,7 @@ const AssignmentManager = () => {
     setSaving(true);
     try {
       await professorService.gradeSubmission(selectedSubmission._id, { marksObtained: Number(gradeForm.marks), feedback: gradeForm.feedback });
-      toast.success("Marks saved! ✅");
+      toast.success("Marks saved successfully.");
       setGradeModal(false);
     } catch { toast.error("Failed to save marks"); }
     finally { setSaving(false); }

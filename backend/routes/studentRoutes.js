@@ -1,8 +1,10 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
 const router  = express.Router();
 const { protect }   = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
-const { uploadCSV } = require("../middleware/uploadMiddleware");
+const uploadMiddleware = require("../middleware/uploadMiddleware");
 const Student    = require("../models/Student");
 const User       = require("../models/User");
 const Attendance = require("../models/Attendance");
@@ -62,6 +64,43 @@ router.get("/attendance", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+router.get("/attendance/summary", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const records = await Attendance.find({ "records.student": student._id }).populate("subject", "name code");
+    const totalClasses = records.length;
+    const presentCount = records.reduce((sum, record) => {
+      const studentRecord = record.records.find((r) => r.student.toString() === student._id.toString());
+      return sum + (studentRecord?.status === "present" ? 1 : 0);
+    }, 0);
+    const overall = totalClasses > 0 ? parseFloat(((presentCount / totalClasses) * 100).toFixed(2)) : 0;
+    const bySubject = {};
+    records.forEach((record) => {
+      const studentRecord = record.records.find((r) => r.student.toString() === student._id.toString());
+      if (!studentRecord) return;
+      const subjectId = record.subject._id.toString();
+      if (!bySubject[subjectId]) bySubject[subjectId] = { subject: record.subject, total: 0, present: 0 };
+      bySubject[subjectId].total += 1;
+      if (studentRecord.status === "present") bySubject[subjectId].present += 1;
+    });
+    res.json({
+      success: true,
+      data: {
+        overall,
+        totalClasses,
+        presentCount,
+        absentCount: totalClasses - presentCount,
+        perSubject: Object.values(bySubject).map((item) => ({
+          subject: item.subject,
+          total: item.total,
+          present: item.present,
+          percentage: item.total > 0 ? Math.round((item.present / item.total) * 100) : 0
+        }))
+      }
+    });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // ASSIGNMENTS
 router.get("/assignments", async (req, res) => {
   try {
@@ -79,7 +118,7 @@ router.get("/assignments", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-router.post("/assignments/:id/submit", uploadCSV.single("file"), async (req, res) => {
+router.post("/assignments/:id/submit", uploadMiddleware.single("file"), async (req, res) => {
   try {
     const student = await getStudent(req.user._id);
     const assignment = await Assignment.findById(req.params.id);
@@ -150,7 +189,7 @@ router.get("/profile", async (req, res) => {
   catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-router.put("/profile", uploadCSV.single("photo"), async (req, res) => {
+router.put("/profile", uploadMiddleware.single("photo"), async (req, res) => {
   try {
     const student = await getStudent(req.user._id);
     const { phone, address, bloodGroup } = req.body;
@@ -166,6 +205,63 @@ router.get("/fees", async (req, res) => {
     const student = await getStudent(req.user._id);
     const fees = await FeeRecord.find({ student: student._id }).sort({ semester: -1 });
     res.json({ success: true, data: fees });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.post("/upload/medical", uploadMiddleware.single("file"), async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    if (!req.file) return res.status(400).json({ success: false, message: "File required" });
+    const certificate = { url: req.file.path, uploadedAt: new Date(), description: req.body.description || "Medical certificate" };
+    student.medicalCertificates = student.medicalCertificates || [];
+    student.medicalCertificates.push(certificate);
+    await student.save();
+    res.status(201).json({ success: true, data: certificate, message: "Medical certificate uploaded" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.post("/upload/internship", uploadMiddleware.single("file"), async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    if (!req.file) return res.status(400).json({ success: false, message: "File required" });
+    const proof = { url: req.file.path, uploadedAt: new Date(), companyName: req.body.companyName || "Unknown", duration: req.body.duration || "Unknown" };
+    student.internshipProofs = student.internshipProofs || [];
+    student.internshipProofs.push(proof);
+    await student.save();
+    res.status(201).json({ success: true, data: proof, message: "Internship proof uploaded" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.get("/profile/idcard", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    if (!student.idCardUrl) return res.status(404).json({ success: false, message: "Student ID card not available" });
+    const cardPath = path.isAbsolute(student.idCardUrl) ? student.idCardUrl : path.join(__dirname, "..", student.idCardUrl);
+    if (fs.existsSync(cardPath)) {
+      return res.sendFile(cardPath);
+    }
+    res.status(404).json({ success: false, message: "ID card file not found" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.get("/date-sheets/:id/hallticket", async (req, res) => {
+  try {
+    const student = await getStudent(req.user._id);
+    const dateSheet = await DateSheet.findById(req.params.id).populate("course department");
+    if (!dateSheet || !dateSheet.isPublished) return res.status(404).json({ success: false, message: "Date sheet not available" });
+    const hallTicketData = {
+      student: {
+        name: student.user.name,
+        rollNumber: student.rollNumber,
+        department: student.department?.name,
+        course: student.course?.name,
+        semester: student.semester,
+        section: student.section,
+      },
+      examSchedule: dateSheet.exams,
+      issuedAt: new Date()
+    };
+    res.json({ success: true, data: hallTicketData });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 

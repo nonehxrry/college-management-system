@@ -2,6 +2,7 @@ const Student = require("../models/Student");
 const User = require("../models/User");
 const Result = require("../models/Result");
 const Attendance = require("../models/Attendance");
+const Submission = require("../models/Submission");
 
 /**
  * AI Integrity Module for College Management System
@@ -126,24 +127,160 @@ const detectSuspiciousActivities = async () => {
   return [];
 };
 
-// Generate integrity report
-const generateIntegrityReport = async () => {
-  const [duplicates, anomalies, suspicious] = await Promise.all([
-    detectDuplicateStudents(),
-    detectDataAnomalies(),
-    detectSuspiciousActivities()
-  ]);
+// Advanced: Calculate student risk score (0-100)
+const calculateStudentRiskScore = async (studentId) => {
+  const student = await Student.findById(studentId);
+  if (!student) return null;
+
+  let riskScore = 0;
+
+  // CGPA Risk (40% weight)
+  if (student.cgpa < 5) riskScore += 40;
+  else if (student.cgpa < 6) riskScore += 25;
+  else if (student.cgpa < 7) riskScore += 10;
+
+  // Attendance Risk (30% weight)
+  const attendanceRecords = await Attendance.find({ "records.student": studentId });
+  let attendancePercentage = 75;
+  if (attendanceRecords.length > 0) {
+    const totalRecords = attendanceRecords.reduce((sum, rec) => sum + rec.records.length, 0);
+    const presentCount = attendanceRecords.reduce((sum, rec) => 
+      sum + rec.records.filter(r => r.student.toString() === studentId.toString() && r.status === "present").length, 0
+    );
+    attendancePercentage = totalRecords > 0 ? (presentCount / totalRecords) * 100 : 75;
+  }
+  
+  if (attendancePercentage < 60) riskScore += 30;
+  else if (attendancePercentage < 75) riskScore += 15;
+
+  // Submission Deadline Miss Risk (20% weight)
+  const recentSubmissions = await Submission.find({ student: studentId })
+    .sort({ createdAt: -1 })
+    .limit(5);
+  
+  const missedDeadlines = recentSubmissions.filter(s => new Date(s.createdAt) > new Date(s.dueDate)).length;
+  if (missedDeadlines > 2) riskScore += 20;
+  else if (missedDeadlines > 0) riskScore += 10;
 
   return {
-    timestamp: new Date(),
-    duplicates: duplicates.length,
-    duplicateDetails: duplicates,
-    anomalies: anomalies.length,
-    anomalyDetails: anomalies,
-    suspiciousActivities: suspicious.length,
-    suspiciousDetails: suspicious,
-    overallHealth: duplicates.length === 0 && anomalies.length === 0 ? "good" : 
-                   duplicates.length > 5 || anomalies.length > 10 ? "critical" : "warning"
+    studentId,
+    riskScore: Math.min(100, riskScore),
+    riskLevel: riskScore > 70 ? "critical" : riskScore > 50 ? "high" : riskScore > 30 ? "medium" : "low",
+    factors: {
+      cgpa: student.cgpa,
+      attendance: Math.round(attendancePercentage),
+      missedDeadlines: missedDeadlines
+    }
+  };
+};
+
+// Advanced: Generate performance predictions with confidence scores
+const generatePerformancePrediction = async (studentId) => {
+  const riskAssessment = await calculateStudentRiskScore(studentId);
+  const student = await Student.findById(studentId);
+  
+  if (!student) return null;
+
+  const recentResults = await Result.find({ student: studentId })
+    .sort({ semester: -1 })
+    .limit(3);
+
+  // Calculate trend
+  let avgImprovement = 0;
+  if (recentResults.length >= 2) {
+    for (let i = 0; i < recentResults.length - 1; i++) {
+      avgImprovement += recentResults[i].cgpa - recentResults[i + 1].cgpa;
+    }
+    avgImprovement = avgImprovement / (recentResults.length - 1);
+  }
+
+  const predictedCGPA = Math.max(0, Math.min(10, student.cgpa + avgImprovement * 0.5));
+  const confidence = Math.max(50, Math.min(95, 75 + recentResults.length * 5));
+
+  return {
+    studentId,
+    currentCGPA: student.cgpa,
+    predictedCGPA: Math.round(predictedCGPA * 100) / 100,
+    trend: avgImprovement > 0.1 ? "improving" : avgImprovement < -0.1 ? "declining" : "stable",
+    confidence: `${Math.round(confidence)}%`,
+    recommendations: generateRecommendations(riskAssessment, student.cgpa)
+  };
+};
+
+// Generate personalized recommendations
+const generateRecommendations = (riskAssessment, cgpa) => {
+  const recommendations = [];
+
+  if (riskAssessment.riskLevel === "critical") {
+    recommendations.push("Schedule meeting with academic advisor urgently");
+    recommendations.push("Enroll in tutoring programs immediately");
+  }
+
+  if (riskAssessment.factors.attendance < 75) {
+    recommendations.push("Improve class attendance - it directly impacts performance");
+  }
+
+  if (riskAssessment.factors.missedDeadlines > 0) {
+    recommendations.push("Set reminders for assignment deadlines");
+  }
+
+  if (cgpa < 6) {
+    recommendations.push("Focus on core subjects with weak performance");
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push("Maintain current performance level");
+    recommendations.push("Consider peer mentoring to help others");
+  }
+
+  return recommendations;
+};
+
+// Advanced: Generate data quality metrics
+const generateDataQualityMetrics = async () => {
+  const totalStudents = await Student.countDocuments();
+  const studentsWithValidCGPA = await Student.countDocuments({ cgpa: { $gte: 0, $lte: 10 } });
+  const studentsWithValidEmail = await Student.countDocuments().populate("user", "email");
+
+  // Check for missing required fields
+  const incompleteProfiles = await Student.countDocuments({
+    $or: [
+      { rollNumber: { $exists: false } },
+      { semester: { $exists: false } },
+      { department: { $exists: false } }
+    ]
+  });
+
+  return {
+    totalStudents,
+    dataCompleteness: {
+      validCGPA: `${Math.round((studentsWithValidCGPA / totalStudents) * 100)}%`,
+      completeProfiles: `${Math.round(((totalStudents - incompleteProfiles) / totalStudents) * 100)}%`
+    },
+    lastUpdated: new Date(),
+    overallQualityScore: Math.round(((studentsWithValidCGPA + (totalStudents - incompleteProfiles)) / (totalStudents * 2)) * 100)
+  };
+};
+
+// Generate a consolidated integrity report combining all checks
+const generateIntegrityReport = async () => {
+  const duplicates = await detectDuplicateStudents();
+  const anomalies = await detectDataAnomalies();
+  const suspiciousActivities = await detectSuspiciousActivities();
+  const dataQuality = await generateDataQualityMetrics();
+
+  return {
+    generatedAt: new Date(),
+    summary: {
+      duplicateCount: duplicates.length,
+      anomalyCount: anomalies.length,
+      suspiciousActivityCount: suspiciousActivities.length,
+      overallQualityScore: dataQuality.overallQualityScore
+    },
+    duplicates,
+    anomalies,
+    suspiciousActivities,
+    dataQuality
   };
 };
 
@@ -152,5 +289,9 @@ module.exports = {
   detectDataAnomalies,
   predictStudentPerformance,
   detectSuspiciousActivities,
-  generateIntegrityReport
+  generateIntegrityReport,
+  calculateStudentRiskScore,
+  generatePerformancePrediction,
+  generateRecommendations,
+  generateDataQualityMetrics
 };

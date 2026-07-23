@@ -78,34 +78,34 @@ const RequireGuest = () => {
 // ─── Nav items per role ────────────────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = {
   student: [
-    { path: "/student/dashboard",   icon: "🏠", label: "Dashboard"   },
-    { path: "/student/attendance",  icon: "📅", label: "Attendance"  },
-    { path: "/student/assignments", icon: "📋", label: "Assignments" },
-    { path: "/student/results",     icon: "📊", label: "Results"     },
-    { path: "/student/date-sheet",  icon: "📆", label: "Date Sheet"  },
-    { path: "/student/notices",     icon: "📢", label: "Notices"     },
-    { path: "/student/profile",     icon: "👤", label: "Profile"     },
-    { path: "/student/tickets",     icon: "🎫", label: "Support"     },
+    { path: "/student/dashboard",   icon: "Home", label: "Dashboard"   },
+    { path: "/student/attendance",  icon: "Calendar", label: "Attendance"  },
+    { path: "/student/assignments", icon: "ClipboardList", label: "Assignments" },
+    { path: "/student/results",     icon: "BarChart3", label: "Results"     },
+    { path: "/student/date-sheet",  icon: "CalendarDays", label: "Date Sheet"  },
+    { path: "/student/notices",     icon: "Bell", label: "Notices"     },
+    { path: "/student/profile",     icon: "User", label: "Profile"     },
+    { path: "/student/tickets",     icon: "Headphones", label: "Support"     },
   ],
   professor: [
-    { path: "/professor/dashboard",      icon: "🏠", label: "Dashboard"      },
-    { path: "/professor/attendance",     icon: "📅", label: "Attendance"     },
-    { path: "/professor/assignments",    icon: "📋", label: "Assignments"    },
-    { path: "/professor/results",        icon: "📊", label: "Upload Marks"   },
-    { path: "/professor/study-material", icon: "📚", label: "Study Material" },
-    { path: "/professor/analytics",      icon: "📈", label: "Analytics"      },
+    { path: "/professor/dashboard",      icon: "Home", label: "Dashboard"      },
+    { path: "/professor/attendance",     icon: "Calendar", label: "Attendance"     },
+    { path: "/professor/assignments",    icon: "ClipboardList", label: "Assignments"    },
+    { path: "/professor/results",        icon: "BarChart3", label: "Upload Marks"   },
+    { path: "/professor/study-material", icon: "BookOpen", label: "Study Material" },
+    { path: "/professor/analytics",      icon: "TrendingUp", label: "Analytics"      },
   ],
   admin: [
-    { path: "/admin/dashboard",  icon: "🏠", label: "Dashboard"  },
-    { path: "/admin/users",      icon: "👥", label: "Users"      },
-    { path: "/admin/students",   icon: "👨‍🎓", label: "Students"   },
-    { path: "/admin/academics",  icon: "🎓", label: "Academics"  },
-    { path: "/admin/ai",         icon: "🤖", label: "AI Integrity" },
-    { path: "/admin/results",    icon: "📊", label: "Results"    },
-    { path: "/admin/notices",    icon: "📢", label: "Notices"    },
-    { path: "/admin/date-sheet", icon: "📆", label: "Date Sheet" },
-    { path: "/admin/fees",       icon: "💰", label: "Fees"       },
-    { path: "/admin/settings",   icon: "⚙️",  label: "Settings"   },
+    { path: "/admin/dashboard",  icon: "Home", label: "Dashboard"  },
+    { path: "/admin/users",      icon: "Users", label: "Users"      },
+    { path: "/admin/students",   icon: "GraduationCap", label: "Students"   },
+    { path: "/admin/academics",  icon: "BookMarked", label: "Academics"  },
+    { path: "/admin/ai",         icon: "Brain", label: "AI Integrity" },
+    { path: "/admin/results",    icon: "BarChart3", label: "Results"    },
+    { path: "/admin/notices",    icon: "Bell", label: "Notices"    },
+    { path: "/admin/date-sheet", icon: "CalendarDays", label: "Date Sheet" },
+    { path: "/admin/fees",       icon: "CreditCard", label: "Fees"       },
+    { path: "/admin/settings",   icon: "Settings", label: "Settings"   },
   ],
 };
 
@@ -130,7 +130,7 @@ const AppShell = ({ role }) => {
 const NotFound = () => (
   <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-50 p-6 text-center">
     <PageTitle title="404 — Not Found" />
-    <div className="text-8xl">🔍</div>
+    <div className="text-6xl text-slate-400">⚠</div>
     <div>
       <h1 className="font-display font-bold text-gray-900 text-3xl mb-2">Page not found</h1>
       <p className="text-gray-500 text-base max-w-md">

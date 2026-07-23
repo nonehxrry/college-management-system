@@ -16,6 +16,11 @@ export const studentService = {
     return data;
   },
 
+  getAIInsights: async () => {
+    const { data } = await api.get("/students/ai/insights");
+    return data;
+  },
+
   getAssignments: async (params = {}) => {
     const { data } = await api.get("/students/assignments", { params });
     return data;
@@ -44,7 +49,7 @@ export const studentService = {
   },
 
   getDateSheets: async () => {
-    const { data } = await api.get("/students/datesheets");
+    const { data } = await api.get("/students/date-sheets");
     return data;
   },
 

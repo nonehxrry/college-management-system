@@ -66,6 +66,53 @@ router.post("/attendance/:subjectId", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+router.post("/attendance/bulk", upload.uploadCSV.single("file"), async (req, res) => {
+  try {
+    const professor = await getProfessor(req.user._id);
+    if (!req.file) return res.status(400).json({ success: false, message: "CSV or Excel file required" });
+    const filePath = req.file.path;
+    const attendanceData = [];
+    const ext = filePath.split('.').pop().toLowerCase();
+    if (ext === 'csv') {
+      const csv = require('csv-parser');
+      await new Promise((resolve, reject) => {
+        const fs = require('fs');
+        fs.createReadStream(filePath)
+          .pipe(csv())
+          .on('data', (row) => attendanceData.push(row))
+          .on('end', resolve)
+          .on('error', reject);
+      });
+    } else {
+      const XLSX = require('xlsx');
+      const workbook = XLSX.readFile(filePath);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      attendanceData.push(...XLSX.utils.sheet_to_json(sheet));
+    }
+
+    const results = { imported: 0, errors: [] };
+    for (const row of attendanceData) {
+      const subjectId = row.subjectId || row.subject;
+      const date = row.date || row.attendanceDate;
+      const section = row.section;
+      const studentId = row.studentId || row.student;
+      const status = (row.status || row.attendance || "present").toLowerCase();
+      if (!subjectId || !date || !studentId) {
+        results.errors.push({ row: row, message: "subjectId, date and studentId are required" });
+        continue;
+      }
+      const attendance = await Attendance.findOneAndUpdate(
+        { subject: subjectId, date: new Date(date), section },
+        { $addToSet: { records: { student: studentId, status } }, professor: professor._id },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      results.imported += 1;
+    }
+
+    res.json({ success: true, data: results, message: "Bulk attendance uploaded" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 router.put("/attendance/:attendanceId", async (req, res) => {
   try {
     const { studentId, status, reason } = req.body;

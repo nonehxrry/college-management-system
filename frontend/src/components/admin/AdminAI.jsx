@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as Icons from "lucide-react";
 import { toast } from "react-hot-toast";
 import { adminService } from "../../services/adminService";
 import Table from "../common/Table";
@@ -55,10 +56,16 @@ const AdminAI = () => {
           {/* Overall Health */}
           <div className="card">
             <h3 className="font-semibold text-lg mb-4">System Health</h3>
-            <div className={`text-4xl mb-2 ${report.overallHealth === 'good' ? 'text-green-500' : report.overallHealth === 'warning' ? 'text-yellow-500' : 'text-red-500'}`}>
-              {report.overallHealth === 'good' ? '✅' : report.overallHealth === 'warning' ? '⚠️' : '❌'}
+            <div className={`flex items-center gap-3 mb-2 ${report.overallHealth === 'good' ? 'text-green-500' : report.overallHealth === 'warning' ? 'text-yellow-500' : 'text-red-500'}`}>
+              {report.overallHealth === 'good' ? (
+                <Icons.CheckCircle size={32} />
+              ) : report.overallHealth === 'warning' ? (
+                <Icons.AlertCircle size={32} />
+              ) : (
+                <Icons.XCircle size={32} />
+              )}
+              <span className="text-2xl font-bold capitalize">{report.overallHealth}</span>
             </div>
-            <p className="text-sm text-gray-600 capitalize">{report.overallHealth}</p>
             <p className="text-xs text-gray-500 mt-2">
               Last checked: {new Date(report.timestamp).toLocaleString()}
             </p>
@@ -67,13 +74,17 @@ const AdminAI = () => {
           {/* Duplicates */}
           <div className="card">
             <h3 className="font-semibold text-lg mb-4">Duplicate Detection</h3>
-            <div className="text-3xl mb-2 text-blue-500">{report.duplicates}</div>
+            <div className="flex items-center gap-3 mb-2">
+              <Icons.Copy className="text-blue-500" size={28} />
+              <span className="text-3xl font-bold text-blue-600">{report.duplicates}</span>
+            </div>
             <p className="text-sm text-gray-600">Potential duplicates found</p>
             {report.duplicates > 0 && (
               <button
                 onClick={() => document.getElementById('duplicates-section').scrollIntoView()}
-                className="mt-2 text-sm text-blue-600 hover:underline"
+                className="mt-2 text-sm text-blue-600 hover:underline flex items-center gap-1"
               >
+                <Icons.ChevronDown size={14} />
                 View details
               </button>
             )}

@@ -57,7 +57,7 @@ const GradeSubmissions = () => {
         })),
       };
       await professorService.uploadInternalMarks(payload);
-      toast.success("Marks uploaded successfully! ✅");
+      toast.success("Marks uploaded successfully.");
     } catch {
       toast.error("Failed to save marks");
     } finally {

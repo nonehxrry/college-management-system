@@ -106,20 +106,10 @@ export const adminService = {
     return data;
   },
 
-  getStudents: async (params = {}) => {
-    const { data } = await api.get("/admin/students", { params });
-    return data;
-  },
-
   bulkImportStudents: async (formData) => {
-    const { data } = await api.post("/admin/students/bulk-import", formData, {
+    const { data } = await api.post("/admin/bulk/import-students", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data;
-  },
-
-  getIntegrityReport: async () => {
-    const { data } = await api.get("/admin/ai/integrity-report");
     return data;
   },
 
@@ -156,27 +146,27 @@ export const adminService = {
   },
 
   getDateSheets: async (params = {}) => {
-    const { data } = await api.get("/admin/datesheets", { params });
+    const { data } = await api.get("/admin/date-sheets", { params });
     return data;
   },
 
   createDateSheet: async (dateSheetData) => {
-    const { data } = await api.post("/admin/datesheets", dateSheetData);
+    const { data } = await api.post("/admin/date-sheets", dateSheetData);
     return data;
   },
 
   updateDateSheet: async (dateSheetId, dateSheetData) => {
-    const { data } = await api.put(`/admin/datesheets/${dateSheetId}`, dateSheetData);
+    const { data } = await api.put(`/admin/date-sheets/${dateSheetId}`, dateSheetData);
     return data;
   },
 
   publishDateSheet: async (dateSheetId) => {
-    const { data } = await api.put(`/admin/datesheets/${dateSheetId}/publish`);
+    const { data } = await api.put(`/admin/date-sheets/${dateSheetId}/publish`);
     return data;
   },
 
   deleteDateSheet: async (dateSheetId) => {
-    const { data } = await api.delete(`/admin/datesheets/${dateSheetId}`);
+    const { data } = await api.delete(`/admin/date-sheets/${dateSheetId}`);
     return data;
   },
 

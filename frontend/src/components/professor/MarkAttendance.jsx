@@ -57,7 +57,7 @@ const MarkAttendance = () => {
         date, topic,
         records: students.map((s) => ({ studentId: s._id, status: s.status })),
       });
-      toast.success("Attendance marked successfully! ✅");
+      toast.success("Attendance marked successfully.");
     } catch {
       toast.error("Failed to save attendance");
     } finally {

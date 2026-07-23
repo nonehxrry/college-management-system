@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as Icons from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { getAttendanceBadgeClass, predictAttendanceShortage } from "../../utils/helpers";
 
@@ -39,9 +40,15 @@ const SubjectCard = ({ sub }) => {
         className="p-4 flex items-center gap-4 cursor-pointer hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0
-          ${isCritical ? "bg-red-100" : isShort ? "bg-amber-100" : "bg-emerald-100"}`}>
-          {isCritical ? "🚨" : isShort ? "⚠️" : "✅"}
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+          ${isCritical ? "bg-red-100 text-red-600" : isShort ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"}`}>
+          {isCritical ? (
+            <Icons.AlertTriangle size={20} />
+          ) : isShort ? (
+            <Icons.AlertCircle size={20} />
+          ) : (
+            <Icons.CheckCircle size={20} />
+          )}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -90,11 +97,17 @@ const SubjectCard = ({ sub }) => {
           {isShort && (
             <div className={`mt-3 p-3 rounded-xl border text-sm
               ${isCritical ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
-              {prediction.canRecover ? (
-                <p>⚡ You need to attend <strong>{prediction.classesNeededToAttend} more consecutive classes</strong> to reach 75%.</p>
-              ) : (
-                <p>❌ Recovery not possible with remaining classes. Visit your mentor.</p>
-              )}
+          {prediction.canRecover ? (
+            <div className="flex items-start gap-2 text-sm text-amber-700">
+              <Icons.Zap size={18} className="flex-shrink-0 mt-0.5" />
+              <p>You need to attend <strong>{prediction.classesNeededToAttend} more consecutive classes</strong> to reach 75%.</p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 text-sm text-red-700">
+              <Icons.XCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <p>Recovery not possible with remaining classes. Visit your mentor.</p>
+            </div>
+          )}
             </div>
           )}
         </div>

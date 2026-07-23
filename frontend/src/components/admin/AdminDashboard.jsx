@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
+import * as Icons from "lucide-react";
 import { StatCard } from "../common/Card";
 import { formatDateTime } from "../../utils/helpers";
 import { adminService } from "../../services/adminService";
@@ -21,11 +22,11 @@ const mockAttendancePie = [
   { name: "<60%", value: 208, fill: "#ef4444" },
 ];
 const mockRecentActivity = [
-  { action: "Student added", detail: "Aarav Sharma enrolled in CS Sem 4", time: new Date(Date.now() - 3600000), icon: "👤" },
-  { action: "Result published", detail: "Sem 3 results for IT department", time: new Date(Date.now() - 7200000), icon: "📊" },
-  { action: "Notice sent", detail: "Urgent: Fee deadline extended", time: new Date(Date.now() - 10800000), icon: "📢" },
-  { action: "Date sheet created", detail: "End sem exams Sem 4 CS/IT", time: new Date(Date.now() - 86400000), icon: "📆" },
-  { action: "Faculty assigned", detail: "Dr. Kumar assigned to CS401", time: new Date(Date.now() - 2 * 86400000), icon: "👨‍🏫" },
+  { action: "Student added", detail: "Aarav Sharma enrolled in CS Sem 4", time: new Date(Date.now() - 3600000), icon: "User", color: "text-blue-500" },
+  { action: "Result published", detail: "Sem 3 results for IT department", time: new Date(Date.now() - 7200000), icon: "BarChart3", color: "text-emerald-500" },
+  { action: "Notice sent", detail: "Urgent: Fee deadline extended", time: new Date(Date.now() - 10800000), icon: "Bell", color: "text-amber-500" },
+  { action: "Date sheet created", detail: "End sem exams Sem 4 CS/IT", time: new Date(Date.now() - 86400000), icon: "CalendarDays", color: "text-purple-500" },
+  { action: "Faculty assigned", detail: "Dr. Kumar assigned to CS401", time: new Date(Date.now() - 2 * 86400000), icon: "Users", color: "text-indigo-500" },
 ];
 
 const RADIAN = Math.PI / 180;
@@ -71,12 +72,12 @@ const AdminDashboard = () => {
   const stats = data || { totalStudents: 0, totalProfessors: 0, totalDepartments: 0, totalSubjects: 0, pendingTickets: 0, totalNotices: 0, activeStudents: 0, publishedResults: 0, feesCollected: 0 };
 
   const quickActions = [
-    { label: "Add Student", icon: "👤", path: "/admin/users", color: "bg-blue-500" },
-    { label: "Bulk Import", icon: "📤", path: "/admin/students", color: "bg-indigo-500" },
-    { label: "AI Integrity", icon: "🤖", path: "/admin/ai", color: "bg-purple-500" },
-    { label: "Publish Results", icon: "📊", path: "/admin/results", color: "bg-emerald-500" },
-    { label: "Send Notice", icon: "📢", path: "/admin/notices", color: "bg-amber-500" },
-    { label: "System Settings", icon: "⚙️", path: "/admin/settings", color: "bg-gray-600" },
+    { label: "Add Student", icon: "User", path: "/admin/users", color: "bg-blue-500" },
+    { label: "Bulk Import", icon: "Upload", path: "/admin/students", color: "bg-indigo-500" },
+    { label: "AI Integrity", icon: "Brain", path: "/admin/ai", color: "bg-purple-500" },
+    { label: "Publish Results", icon: "BarChart3", path: "/admin/results", color: "bg-emerald-500" },
+    { label: "Send Notice", icon: "Bell", path: "/admin/notices", color: "bg-amber-500" },
+    { label: "System Settings", icon: "Settings", path: "/admin/settings", color: "bg-gray-600" },
   ];
 
   return (
@@ -93,34 +94,43 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Students" value={stats.totalStudents.toLocaleString()} icon="👥" color="blue" change={`${stats.activeStudents} active`} onClick={() => navigate("/admin/students")} />
-        <StatCard label="Professors" value={stats.totalProfessors} icon="👨‍🏫" color="green" onClick={() => navigate("/admin/users")} />
-        <StatCard label="Departments" value={stats.totalDepartments} icon="🏛️" color="purple" onClick={() => navigate("/admin/academics")} />
-        <StatCard label="Subjects" value={stats.totalSubjects} icon="📚" color="amber" onClick={() => navigate("/admin/academics")} />
-        <StatCard label="Published Results" value={stats.publishedResults} icon="📊" color="emerald" onClick={() => navigate("/admin/results")} />
-        <StatCard label="Fees Collected" value={`₹${stats.feesCollected.toLocaleString()}`} icon="💰" color="teal" onClick={() => navigate("/admin/fees")} />
-        <StatCard label="Pending Tickets" value={stats.pendingTickets} icon="🎫" color="red" onClick={() => navigate("/admin/tickets")} />
-        <StatCard label="Active Notices" value={stats.totalNotices} icon="📢" color="orange" onClick={() => navigate("/admin/notices")} />
+        <StatCard label="Total Students" value={stats.totalStudents.toLocaleString()} icon="Users" color="blue" change={`${stats.activeStudents} active`} onClick={() => navigate("/admin/students")} />
+        <StatCard label="Professors" value={stats.totalProfessors} icon="BookOpen" color="green" onClick={() => navigate("/admin/users")} />
+        <StatCard label="Departments" value={stats.totalDepartments} icon="Building2" color="purple" onClick={() => navigate("/admin/academics")} />
+        <StatCard label="Subjects" value={stats.totalSubjects} icon="BookMarked" color="amber" onClick={() => navigate("/admin/academics")} />
+        <StatCard label="Published Results" value={stats.publishedResults} icon="BarChart3" color="emerald" onClick={() => navigate("/admin/results")} />
+        <StatCard label="Fees Collected" value={`₹${stats.feesCollected.toLocaleString()}`} icon="CreditCard" color="teal" onClick={() => navigate("/admin/fees")} />
+        <StatCard label="Pending Support" value={stats.pendingTickets} icon="Headphones" color="red" onClick={() => navigate("/admin/tickets")} />
+        <StatCard label="Active Notices" value={stats.totalNotices} icon="Bell" color="orange" onClick={() => navigate("/admin/notices")} />
       </div>
 
       {integrityReport && (
         <div className="card">
           <h3 className="font-display font-bold text-gray-900 mb-4">AI Integrity Report</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`p-4 rounded-lg ${integrityReport.overallHealth === 'good' ? 'bg-green-50 border-green-200' : integrityReport.overallHealth === 'warning' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="text-2xl mb-2">{integrityReport.overallHealth === 'good' ? '✅' : integrityReport.overallHealth === 'warning' ? '⚠️' : '❌'}</div>
+            <div className={`p-4 rounded-lg flex items-center gap-3 ${integrityReport.overallHealth === 'good' ? 'bg-green-50 border border-green-200' : integrityReport.overallHealth === 'warning' ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
+              <div className="text-2xl flex-shrink-0">
+                {integrityReport.overallHealth === 'good' ? (
+                  <Icons.CheckCircle className="text-green-600" size={28} />
+                ) : integrityReport.overallHealth === 'warning' ? (
+                  <Icons.AlertCircle className="text-yellow-600" size={28} />
+                ) : (
+                  <Icons.XCircle className="text-red-600" size={28} />
+                )}
+              </div>
               <div className="font-semibold">System Health: {integrityReport.overallHealth}</div>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl mb-2">🔍</div>
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center gap-3">
+              <Icons.Search className="text-blue-600 flex-shrink-0" size={28} />
               <div className="font-semibold">{integrityReport.duplicates} Duplicates Found</div>
             </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="text-2xl mb-2">🚨</div>
+            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center gap-3">
+              <Icons.AlertTriangle className="text-orange-600 flex-shrink-0" size={28} />
               <div className="font-semibold">{integrityReport.anomalies} Data Anomalies</div>
             </div>
           </div>
-          <button onClick={() => navigate("/admin/ai")} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+          <button onClick={() => navigate("/admin/ai")} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+            <Icons.Eye size={16} />
             View Full Report
           </button>
         </div>
@@ -129,16 +139,19 @@ const AdminDashboard = () => {
       <div>
         <h3 className="font-display font-semibold text-gray-800 mb-3">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {quickActions.map(({ label, icon, path, color }) => (
-            <button
-              key={label}
-              onClick={() => navigate(path)}
-              className={`${color} text-white rounded-2xl p-4 text-left hover:opacity-90 active:scale-[0.97] transition-all shadow-md hover:shadow-lg`}
-            >
-              <span className="text-2xl block mb-2">{icon}</span>
-              <span className="text-xs font-semibold leading-tight">{label}</span>
-            </button>
-          ))}
+          {quickActions.map(({ label, icon, path, color }) => {
+            const IconComponent = Icons[icon];
+            return (
+              <button
+                key={label}
+                onClick={() => navigate(path)}
+                className={`${color} text-white rounded-2xl p-4 text-left hover:opacity-90 active:scale-[0.97] transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-2`}
+              >
+                {IconComponent && <IconComponent size={24} />}
+                <span className="text-xs font-semibold text-center">{label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -186,18 +199,21 @@ const AdminDashboard = () => {
       <div className="card">
         <h3 className="font-display font-bold text-gray-900 mb-4">Recent Activity</h3>
         <div className="space-y-3">
-          {mockRecentActivity.map((activity, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-              <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm flex-shrink-0">
-                {activity.icon}
+          {mockRecentActivity.map((activity, i) => {
+            const IconComponent = Icons[activity.icon];
+            return (
+              <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className={`w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 ${activity.color}`}>
+                  {IconComponent && <IconComponent size={18} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-800 text-sm">{activity.action}</p>
+                  <p className="text-xs text-gray-500 truncate">{activity.detail}</p>
+                </div>
+                <p className="text-xs text-gray-400 flex-shrink-0">{formatDateTime(activity.time)}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-800 text-sm">{activity.action}</p>
-                <p className="text-xs text-gray-500 truncate">{activity.detail}</p>
-              </div>
-              <p className="text-xs text-gray-400 flex-shrink-0">{formatDateTime(activity.time)}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

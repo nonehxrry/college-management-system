@@ -16,8 +16,8 @@ export const professorService = {
     return data;
   },
 
-  markAttendance: async (attendanceData) => {
-    const { data } = await api.post("/professors/attendance/mark", attendanceData);
+  markAttendance: async (subjectId, attendanceData) => {
+    const { data } = await api.post(`/professors/attendance/${subjectId}`, attendanceData);
     return data;
   },
 

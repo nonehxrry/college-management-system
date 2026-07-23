@@ -2,6 +2,32 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { getInitials, generateAvatarColor } from "../../utils/helpers";
+import * as Icons from "lucide-react";
+
+// Icon name to lucide-react component mapping
+const getIcon = (iconName) => {
+  const iconMap = {
+    Home: Icons.Home,
+    Calendar: Icons.Calendar,
+    ClipboardList: Icons.ClipboardList,
+    BarChart3: Icons.BarChart3,
+    CalendarDays: Icons.CalendarDays,
+    Bell: Icons.Bell,
+    User: Icons.User,
+    Headphones: Icons.Headphones,
+    BookOpen: Icons.BookOpen,
+    TrendingUp: Icons.TrendingUp,
+    Users: Icons.Users,
+    GraduationCap: Icons.GraduationCap,
+    BookMarked: Icons.BookMarked,
+    Brain: Icons.Brain,
+    CreditCard: Icons.CreditCard,
+    Settings: Icons.Settings,
+    LogOut: Icons.LogOut,
+  };
+  const IconComponent = iconMap[iconName] || Icons.HelpCircle;
+  return IconComponent;
+};
 
 const themeMap = {
   student: {
@@ -141,7 +167,10 @@ const Sidebar = ({ navItems, isOpen, onClose }) => {
                     {isActive && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-current rounded-r-full opacity-80" />
                     )}
-                    <span className="text-lg leading-none">{icon}</span>
+                    {(() => {
+                      const IconComponent = getIcon(icon);
+                      return <IconComponent size={20} className="flex-shrink-0" />;
+                    })()}
                     <span className="flex-1">{label}</span>
                     {badge && (
                       <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -160,7 +189,7 @@ const Sidebar = ({ navItems, isOpen, onClose }) => {
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-300/80 hover:bg-red-500/15 hover:text-red-200 transition-all duration-150"
           >
-            <span className="text-lg">🚪</span>
+            <Icons.LogOut size={20} />
             <span>Sign Out</span>
           </button>
         </div>

@@ -1,0 +1,301 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties ──────────────────────────────────────────────── */
+:root {
+  --sidebar-width:   260px;
+  --navbar-height:   64px;
+  --radius-card:     1rem;
+  --transition-fast: 150ms cubic-bezier(.4,0,.2,1);
+  --transition-base: 250ms cubic-bezier(.4,0,.2,1);
+}
+
+/* ─── Base reset ─────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-800 font-sans antialiased;
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Scrollbar — Webkit */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+
+  /* Firefox */
+  * { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
+
+  /* Remove number input arrows */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* Focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-400 ring-offset-2;
+  }
+}
+
+/* ─── Component Classes ──────────────────────────────────────────────────── */
+@layer components {
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  .page-container {
+    @apply min-h-screen bg-gray-50;
+  }
+  .main-content {
+    padding-top: var(--navbar-height);
+    margin-left: var(--sidebar-width);
+    @apply min-h-screen transition-all duration-300;
+  }
+  @media (max-width: 1024px) {
+    .main-content { margin-left: 0; }
+  }
+  .page-inner {
+    @apply max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6;
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-card p-5 transition-shadow duration-200;
+  }
+  .card-hover {
+    @apply card hover:shadow-card-hover cursor-pointer;
+  }
+  .glass-card {
+    @apply rounded-2xl border border-white/20 backdrop-blur-xl shadow-glass;
+    background: rgba(255,255,255,.12);
+  }
+  .stat-card {
+    @apply card flex items-center gap-4;
+  }
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+  .page-title {
+    @apply font-display font-bold text-gray-900 text-2xl leading-tight;
+  }
+  .page-subtitle {
+    @apply text-gray-400 text-sm mt-0.5;
+  }
+  .section-title {
+    @apply font-display font-bold text-gray-800 text-base;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5
+           rounded-xl text-sm font-semibold transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed select-none
+           active:scale-[.97] focus-visible:ring-2 focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn-base bg-primary-600 text-white hover:bg-primary-700
+           shadow-md shadow-primary-200 hover:shadow-lg hover:shadow-primary-200
+           focus-visible:ring-primary-400;
+  }
+  .btn-secondary {
+    @apply btn-base bg-white text-gray-700 border border-gray-200
+           hover:bg-gray-50 hover:border-gray-300
+           focus-visible:ring-gray-300;
+  }
+  .btn-danger {
+    @apply btn-base bg-red-600 text-white hover:bg-red-700
+           shadow-md shadow-red-200
+           focus-visible:ring-red-400;
+  }
+  .btn-ghost {
+    @apply btn-base text-gray-600 hover:bg-gray-100
+           focus-visible:ring-gray-300;
+  }
+  .btn-icon {
+    @apply w-9 h-9 rounded-xl flex items-center justify-center
+           transition-all duration-150 active:scale-95;
+  }
+
+  /* ── Form controls ───────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-3.5 py-2.5 text-sm text-gray-800
+           bg-white border border-gray-200 rounded-xl
+           placeholder:text-gray-400
+           focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100
+           transition-all duration-150 disabled:bg-gray-50 disabled:text-gray-400;
+  }
+  .input-error {
+    @apply border-red-400 ring-2 ring-red-100 focus:border-red-400 focus:ring-red-100;
+  }
+  .label {
+    @apply block text-xs font-semibold text-gray-600 mb-1.5 tracking-wide;
+  }
+  .helper-text {
+    @apply text-xs text-gray-400 mt-1;
+  }
+  .error-text {
+    @apply text-xs text-red-500 mt-1;
+  }
+
+  /* ── Badges ──────────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+  .badge-success  { @apply bg-emerald-100 text-emerald-700; }
+  .badge-warning  { @apply bg-amber-100   text-amber-700;   }
+  .badge-danger   { @apply bg-red-100     text-red-700;     }
+  .badge-info     { @apply bg-blue-100    text-blue-700;    }
+  .badge-primary  { @apply bg-primary-100 text-primary-700; }
+  .badge-gray     { @apply bg-gray-100    text-gray-600;    }
+
+  /* ── Sidebar nav item ────────────────────────────────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl
+           text-sm font-medium transition-all duration-150 cursor-pointer;
+  }
+  .nav-item-active {
+    @apply bg-white/20 text-white font-semibold;
+  }
+  .nav-item-inactive {
+    @apply text-white/60 hover:text-white hover:bg-white/10;
+  }
+
+  /* ── Table ───────────────────────────────────────────────────────────── */
+  .table-wrapper {
+    @apply overflow-x-auto rounded-xl;
+  }
+  .table-base {
+    @apply w-full border-collapse text-sm;
+  }
+  .table-thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-gray-500
+           uppercase tracking-wider bg-gray-50 border-b border-gray-100 whitespace-nowrap;
+  }
+  .table-tbody td {
+    @apply px-4 py-3.5 border-b border-gray-50 text-gray-700 align-middle;
+  }
+  .table-tbody tr:last-child td { @apply border-b-0; }
+  .table-tbody tr:hover td { @apply bg-gray-50/70; }
+
+  /* ── Modal overlay ───────────────────────────────────────────────────── */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4
+           bg-black/50 backdrop-blur-sm;
+  }
+  .modal-box {
+    @apply bg-white rounded-3xl shadow-2xl w-full max-h-[90vh]
+           flex flex-col overflow-hidden animate-slide-up;
+  }
+
+  /* ── Progress bar ────────────────────────────────────────────────────── */
+  .progress-bar-track {
+    @apply w-full bg-gray-100 rounded-full overflow-hidden;
+  }
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+
+  /* ── Skeleton loader ─────────────────────────────────────────────────── */
+  .skeleton {
+    @apply bg-gray-200 rounded-xl relative overflow-hidden;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,.7) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* ── Tooltip ─────────────────────────────────────────────────────────── */
+  .tooltip {
+    @apply absolute z-50 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg
+           shadow-lg whitespace-nowrap pointer-events-none;
+  }
+
+  /* ── Divider ─────────────────────────────────────────────────────────── */
+  .divider {
+    @apply border-t border-gray-100 my-4;
+  }
+
+  /* ── Avatar ──────────────────────────────────────────────────────────── */
+  .avatar {
+    @apply rounded-full object-cover flex-shrink-0;
+  }
+
+  /* ── Scrollbar hide ──────────────────────────────────────────────────── */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* ── Gradient text ───────────────────────────────────────────────────── */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r;
+  }
+
+  /* ── Info row (label + value pairs) ─────────────────────────────────── */
+  .info-row {
+    @apply flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0;
+  }
+  .info-label { @apply text-xs text-gray-400 w-36 flex-shrink-0 mt-0.5; }
+  .info-value { @apply text-sm text-gray-800 font-medium; }
+
+  /* ── Alert banners ───────────────────────────────────────────────────── */
+  .alert {
+    @apply flex items-start gap-3 p-4 rounded-xl border text-sm;
+  }
+  .alert-warning { @apply bg-amber-50  border-amber-200  text-amber-800;  }
+  .alert-danger  { @apply bg-red-50    border-red-200    text-red-800;    }
+  .alert-success { @apply bg-emerald-50 border-emerald-200 text-emerald-800; }
+  .alert-info    { @apply bg-blue-50   border-blue-200   text-blue-800;   }
+
+  /* ── Tab bar ─────────────────────────────────────────────────────────── */
+  .tab-bar {
+    @apply flex gap-1 border-b border-gray-200 overflow-x-auto no-scrollbar;
+  }
+  .tab-item {
+    @apply px-4 py-3 text-sm font-semibold border-b-2 transition-all flex-shrink-0 whitespace-nowrap;
+  }
+  .tab-active   { @apply border-primary-600 text-primary-600; }
+  .tab-inactive { @apply border-transparent text-gray-500 hover:text-gray-700; }
+
+  /* ── Attendance colour helpers ───────────────────────────────────────── */
+  .attendance-high   { @apply text-emerald-600 bg-emerald-50; }
+  .attendance-medium { @apply text-amber-600   bg-amber-50;   }
+  .attendance-low    { @apply text-red-600     bg-red-50;     }
+
+  /* ── Dot indicator ───────────────────────────────────────────────────── */
+  .dot-online  { @apply w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_#34d399]; }
+  .dot-offline { @apply w-2 h-2 rounded-full bg-gray-300;   }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance  { text-wrap: balance; }
+  .line-clamp-1  { overflow:hidden; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+  .line-clamp-2  { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .line-clamp-3  { overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+  .backdrop-blur-xs { backdrop-filter: blur(4px); }
+
+  /* Role-specific gradient backgrounds */
+  .gradient-student   { @apply bg-gradient-to-br from-[#0f172a] via-[#1a2f5a] to-[#1e3a5f]; }
+  .gradient-professor { @apply bg-gradient-to-br from-[#052e16] via-[#064e3b] to-[#065f46]; }
+  .gradient-admin     { @apply bg-gradient-to-br from-[#1a0533] via-[#231242] to-[#2d1257]; }
+
+  /* Monospace numbers for stats */
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+/* ─── Print styles ───────────────────────────────────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  body      { background: white; }
+  .card     { box-shadow: none; border: 1px solid #e5e7eb; }
+}

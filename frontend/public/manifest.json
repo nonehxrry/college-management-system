@@ -1,0 +1,9 @@
+{
+  "name": "College Management System",
+  "short_name": "CMS",
+  "description": "Modern Academic Portal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a237e",
+  "theme_color": "#1a237e"
+}
